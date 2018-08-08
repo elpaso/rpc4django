@@ -172,7 +172,7 @@ def serve_rpc_request(request):
         # Handle POST request with RPC payload
 
         if LOG_REQUESTS_RESPONSES:
-            body_text = request.body.decode('utf-8')
+            body_text = request.body.decode('utf-8', errors='ignore')
             logger.debug('Incoming request: %s' % body_text)
 
         if is_xmlrpc_request(request):
