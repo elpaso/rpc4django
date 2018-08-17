@@ -5,6 +5,8 @@ Implements an XMLRPC dispatcher
 import datetime
 import sys
 import inspect
+import logging
+import traceback
 from defusedxml import xmlrpc
 from django.conf import settings
 from collections import OrderedDict
@@ -18,6 +20,8 @@ else:
     from xmlrpc.client import Fault, dumps, Marshaller
     from xmlrpc.server import SimpleXMLRPCDispatcher
 
+
+logger = logging.getLogger(__name__)
 
 Marshaller.dispatch[OrderedDict] = Marshaller.dump_struct
 
@@ -69,9 +73,14 @@ class XMLRPCDispatcher(SimpleXMLRPCDispatcher):
         """
         try:
             if sys.version_info.major == 2:
-                params, method = xmlrpc.xmlrpc_client.loads(data, self.use_datetime)
+                params, method = xmlrpc.xmlrpc_client.loads(
+                    data.decode('utf-8', errors='ignore'),
+                    self.use_datetime)
             else:
-                params, method = xmlrpc.xmlrpc_client.loads(data, self.use_datetime, self.use_builtin_types)
+                params, method = xmlrpc.xmlrpc_client.loads(
+                    data,
+                    self.use_datetime,
+                    self.use_builtin_types)
             response = self._dispatch(method, params, **kwargs)
 
             # wrap response in a singleton tuple
@@ -83,10 +92,13 @@ class XMLRPCDispatcher(SimpleXMLRPCDispatcher):
             response = dumps(fault, allow_none=self.allow_none,
                              encoding=self.encoding)
         except Exception as e:
+            _ex_type, _ex, tb = sys.exc_info()
+            error_message = traceback.format_tb(tb)
             response = dumps(
-                Fault(1, 'Unknown error, {}'.format(e)),
+                Fault(1, 'Unknown error, {}'.format(error_message)),
                 encoding=self.encoding, allow_none=self.allow_none,
             )
+            logging.error(e, exc_info=True)
 
         return response
 

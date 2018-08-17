@@ -22,7 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .rpcdispatcher import dispatcher
 from .__init__ import version
 
-logger = logging.getLogger('rpc4django')
+logger = logging.getLogger(__name__)
 
 # these restrictions can change the functionality of rpc4django
 # but they are completely optional
